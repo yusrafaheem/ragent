@@ -1,0 +1,34 @@
+# Retrieval microservice image. Build context is the repo root (see
+# docker-compose.yml / infra/k8s), since this needs both src/ragent and
+# apps/retrieval_service.py.
+#
+#   docker build -f infra/docker/Dockerfile.retrieval -t ragent-retrieval .
+#
+# `pip install .` pulls only the core dependencies from pyproject.toml
+# (numpy, fastapi, uvicorn, httpx, pydantic), so this image runs the
+# HashingEmbedder/NumpyVectorStore fallback path out of the box with no
+# extra build args. To ship an image with the real FAISS index instead,
+# add `--build-arg EXTRAS=vectorstore` (installs `.[vectorstore]`).
+
+FROM python:3.11-slim AS base
+
+WORKDIR /app
+
+ARG EXTRAS=""
+
+COPY pyproject.toml ./
+COPY src ./src
+COPY apps ./apps
+
+RUN if [ -n "$EXTRAS" ]; then pip install --no-cache-dir ".[${EXTRAS}]"; else pip install --no-cache-dir .; fi
+
+# Non-root runtime user.
+RUN useradd --create-home --uid 1000 ragent
+USER ragent
+
+EXPOSE 8001
+
+HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
+    CMD python -c "import httpx; httpx.get('http://localhost:8001/health', timeout=2).raise_for_status()"
+
+CMD ["uvicorn", "apps.retrieval_service:app", "--host", "0.0.0.0", "--port", "8001"]

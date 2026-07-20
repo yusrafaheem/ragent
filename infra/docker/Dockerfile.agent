@@ -1,0 +1,35 @@
+# Agent orchestrator microservice image. Build context is the repo root
+# (see docker-compose.yml / infra/k8s), since this needs both src/ragent
+# and apps/agent_service.py.
+#
+#   docker build -f infra/docker/Dockerfile.agent -t ragent-agent .
+#
+# `pip install .` pulls the core dependencies (numpy, fastapi, uvicorn,
+# httpx, pydantic) so this runs StubLLM out of the box. Add
+# `--build-arg EXTRAS=llm` to install `.[llm]` (the real OpenAI-compatible
+# client) for a production image; it's a no-op at runtime unless
+# OPENAI_API_KEY is also set (see ragent.llm.get_llm_client).
+
+FROM python:3.11-slim AS base
+
+WORKDIR /app
+
+ARG EXTRAS=""
+
+COPY pyproject.toml ./
+COPY src ./src
+COPY apps ./apps
+
+RUN if [ -n "$EXTRAS" ]; then pip install --no-cache-dir ".[${EXTRAS}]"; else pip install --no-cache-dir .; fi
+
+RUN useradd --create-home --uid 1000 ragent
+USER ragent
+
+ENV RETRIEVAL_SERVICE_URL=http://retrieval:8001
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
+    CMD python -c "import httpx; httpx.get('http://localhost:8000/health', timeout=2).raise_for_status()"
+
+CMD ["uvicorn", "apps.agent_service:app", "--host", "0.0.0.0", "--port", "8000"]
