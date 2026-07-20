@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ragent-config
+  namespace: ragent
+data:
+  # Cluster-internal DNS name for the retrieval Service defined in
+  # retrieval.yaml -- <service-name>.<namespace>.svc.cluster.local, or just
+  # <service-name> when the caller is in the same namespace.
+  RETRIEVAL_SERVICE_URL: "http://ragent-retrieval:8001"
+  EMBEDDER_BACKEND: "auto"
+  VECTORSTORE_BACKEND: "auto"
+  LLM_BACKEND: "auto"
+  AGENT_MAX_STEPS: "6"
+---
+# Placeholder Secret for the real LLM backend. Populate with:
+#   kubectl create secret generic ragent-secrets \
+#     --namespace ragent \
+#     --from-literal=OPENAI_API_KEY=sk-... \
+#     --dry-run=client -o yaml | kubectl apply -f -
+# (never commit real key values here -- this file intentionally ships with
+# an empty placeholder so `kubectl apply -f .` doesn't fail on a missing
+# Secret, and the agent Deployment falls back to StubLLM if the key is
+# absent or empty, per ragent.llm.get_llm_client).
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ragent-secrets
+  namespace: ragent
+type: Opaque
+stringData:
+  OPENAI_API_KEY: ""
