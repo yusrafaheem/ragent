@@ -1,0 +1,37 @@
+services:
+  retrieval:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.retrieval
+    ports:
+      - "8001:8001"
+    environment:
+      EMBEDDER_BACKEND: auto
+      VECTORSTORE_BACKEND: auto
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8001/health', timeout=2).raise_for_status()"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  agent:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.agent
+    ports:
+      - "8000:8000"
+    environment:
+      RETRIEVAL_SERVICE_URL: http://retrieval:8001
+      LLM_BACKEND: auto
+      # OPENAI_API_KEY: set this (or pass via `docker compose run -e`) to use
+      # the real OpenAI-compatible backend instead of StubLLM.
+    depends_on:
+      retrieval:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health', timeout=2).raise_for_status()"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
