@@ -1,0 +1,26 @@
+Retrieval-augmented generation, commonly abbreviated RAG, is an architecture that
+grounds a language model's outputs in passages retrieved from an external
+document collection at inference time, rather than relying solely on
+knowledge encoded in the model's parameters during training. A typical RAG
+pipeline has two stages: an offline indexing stage, where documents are
+split into overlapping chunks, embedded into a vector space with a text
+encoder, and stored in a vector index; and an online query stage, where the
+user's question is embedded with the same encoder, the index is searched
+for the nearest chunks by cosine similarity, and those chunks are inserted
+into the language model's prompt as context before it generates an answer.
+
+The primary motivation for RAG is that it lets a system answer questions
+about information the base model never saw during training, such as
+private documents, recent events, or a specific organization's internal
+knowledge base, without the cost of fine-tuning or retraining the model
+itself. It also gives a natural mechanism for citation: because the answer
+is explicitly conditioned on retrieved passages, the system can point back
+to which document a claim came from, which is difficult to do with a
+purely parametric model.
+
+Retrieval quality is the dominant factor in RAG system quality. If the
+retriever fails to surface the passage that actually answers the question,
+no amount of generation quality in the language model can recover; this is
+why chunking strategy, embedding model choice, and the vector index's
+recall characteristics matter as much as, or more than, prompt engineering
+around the generation step.

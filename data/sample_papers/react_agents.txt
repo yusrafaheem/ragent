@@ -1,0 +1,25 @@
+ReAct is a prompting pattern for language-model agents that interleaves
+reasoning traces with actions, rather than having the model either reason
+purely in free text or call tools with no visible reasoning at all. At each
+step, the model produces a short "Thought" explaining what it should do
+next, followed by an "Action" naming a tool and an argument to call it
+with; the calling code executes that tool and feeds the result back to the
+model as an "Observation," and the cycle repeats until the model emits a
+final answer instead of another action.
+
+Interleaving thoughts with actions has two practical benefits over
+action-only agents. First, the reasoning trace is inspectable: when an
+agent gives a wrong answer, a developer can read the thought that led to
+each tool call and see exactly where the reasoning went wrong, rather than
+only seeing a black-box sequence of tool calls. Second, the explicit
+reasoning step tends to reduce hallucinated tool calls, because the model
+is prompted to articulate why a tool call is needed before making it,
+rather than immediately jumping to an action.
+
+A minimal ReAct agent implementation needs only three things: a way to
+format the available tools and the running transcript into a prompt, a way
+to parse an "Action: tool_name[argument]" pattern out of the model's free-
+text reply, and a dispatch table mapping tool names to the functions that
+actually perform them. Everything else -- multi-tool planning, retrying
+failed tool calls, budgeting a maximum number of steps before giving up --
+is a refinement layered on top of that same core loop.

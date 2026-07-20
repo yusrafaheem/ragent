@@ -1,0 +1,27 @@
+A vector database's core problem is nearest-neighbor search: given a query
+vector, find the k stored vectors most similar to it, typically under
+cosine similarity or Euclidean distance. The naive solution -- a brute-force
+scan comparing the query against every stored vector -- is exact and trivial
+to implement, but its cost grows linearly with the number of stored
+vectors, which becomes a bottleneck once a collection reaches the millions
+of vectors that a production retrieval-augmented-generation system might
+index.
+
+Approximate nearest-neighbor (ANN) index structures trade a small amount of
+recall for large speedups over brute force. IVF (inverted file index)
+partitions the vector space into clusters with k-means, and at query time
+only searches the clusters nearest the query rather than the whole
+collection. HNSW (hierarchical navigable small world graphs) builds a
+multi-layer graph where each vector is connected to its approximate nearest
+neighbors, and search proceeds by greedily walking the graph from a coarse
+top layer down to a fine bottom layer. Product quantization compresses each
+vector into a small code by quantizing sub-vectors independently, trading
+some accuracy for a large reduction in memory footprint, which matters when
+an index needs to fit in RAM.
+
+FAISS, developed by Meta AI, is the most widely used open-source library
+implementing these structures; it exposes a uniform index API so a system
+can start with an exact flat index during development and swap in an IVF
+or HNSW index at the same interface once the collection grows large enough
+that brute-force search's linear cost becomes the bottleneck, without
+changing any of the code that calls the index.
