@@ -1,0 +1,9 @@
+# kubectl apply -k infra/k8s
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: ragent
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - retrieval.yaml
+  - agent.yaml
