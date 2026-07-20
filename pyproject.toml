@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ragent"
+version = "0.1.0"
+description = "A retrieval-augmented, tool-using research-paper Q&A agent -- built as two independently deployable microservices (retrieval + agent orchestration), with graceful degradation to zero-dependency reference implementations of embeddings/vector search when optional ML/API dependencies aren't installed."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Yusra Faheem" }]
+dependencies = [
+    "numpy>=1.24",
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "httpx>=0.27",
+    "pydantic>=2.6",
+]
+
+[project.optional-dependencies]
+# Real vector-search / embedding backends. Not required to run the system --
+# see src/ragent/vectorstore.py and embeddings.py for the fallback design.
+vectorstore = ["faiss-cpu>=1.8"]
+embeddings = ["sentence-transformers>=2.6"]
+# Real LLM backend (OpenAI-compatible chat completions client). The agent
+# runs fully offline against a deterministic stub backend without this.
+llm = ["openai>=1.30"]
+dev = ["ruff>=0.4", "black>=24.0", "mypy>=1.9"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+# See pyproject.toml comment history in the vectorgrad project for the
+# rationale on this scope -- correctness/bug-risk rules only, not every
+# pyupgrade/bugbear stylistic opinion.
+select = ["E", "F", "I"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
